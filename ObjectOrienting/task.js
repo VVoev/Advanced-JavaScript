@@ -2,6 +2,7 @@ function solve() {
     var module = (function () {
 
         var playable,
+            playlist,
             audio,
             video,
             validator,
@@ -15,6 +16,28 @@ function solve() {
                 name == name || 'Value';
                 if (val === undefined) {
                     throw new Error(`${name} cannot be undefined`)
+                }
+            },
+
+            validatePageandSize: function (page, size, maxElements) {
+                this.validateIfUndefined(page);
+                this.validateIfUndefined(size);
+                if (typeof page !== 'number' || typeof size !== 'number')
+                    throw new Error(`It is not a number`);
+
+                if (page < 0 || size < 0) {
+                    throw new Error(`Page or size is less than 0`);
+                }
+
+                if (page * size > maxElements) {
+                    throw new Error('Parge * size should be less than maxElements')
+                }
+            },
+
+            validateIfObject: function (val, name) {
+                name = name || 'Value';
+                if (typeof val !== 'object') {
+                    throw new Error(name + 'must be a object');
                 }
             },
             validateString: function (val, name) {
@@ -49,8 +72,120 @@ function solve() {
                 if (val <= 0) {
                     throw new Error(name + 'must be a positive')
                 }
+            },
+
+            validatePlayableId: function (id) {
+                this.validateIfUndefined(id, 'Playable id');
+                if (typeof id !== 'number') {
+                    id = id.id;
+                }
+
+                this.validateIfUndefined(id, 'Playable is not valid')
+                return id;
             }
         }
+
+        playlist = (function () {
+            var playlist = Object.create({});
+            var currentPlayListId = 0;
+
+            Object.defineProperty(playlist, 'init', {
+                value: function (name) {
+                    this.name = name;
+                    this._id == ++currentPlayListId;
+                    this._playables = [];
+                    return this;
+                }
+            })
+
+            function sortByTitleThenById(a, b) {
+                if (a.title < b.title) {
+                    return -1
+                } else if (a.title > b.title) {
+                    return 1;
+                }
+
+                if (a.id < b.id) {
+                    return -1
+                } else if (a.id > b.id) {
+                    return 1;
+                }
+                else {
+                    return 0;
+                }
+            }
+
+            Object.defineProperty(playlist, 'id', {
+                get: function () {
+                    return this._id;
+                }
+            })
+
+
+            Object.defineProperty(playlist, 'name', {
+                get: function () {
+                    return this._name;
+                },
+                set: function (val) {
+                    validator.validateString(val, 'Playlist name');
+                    this._name = val;
+                }
+            })
+
+            Object.defineProperty(playlist, 'addPlayable', {
+                value: function (playable) {
+                    validator.validateIfUndefined(playable, 'Playlist add playable');
+                    validator.validateIfObject(playable, 'Playable add parameter');
+                    validator.validateIfUndefined(playable.id, 'Playable add plarable must have id');
+
+                    this._playables.push(playable);
+                    return this;
+                }
+            });
+
+            Object.defineProperty(playlist, 'getPlayableById', {
+                value: function (id) {
+                    validator.validateIfUndefined(id, 'Playable get playable doest have id');
+
+                    var isFound = this._playables.find((p) => {
+                        return p.id === id;
+                    })
+
+                    if (isFound)
+                        return isFound;
+                    return null
+                }
+            })
+
+            Object.defineProperty(playlist, 'removePlayable', {
+                value: function (id) {
+                    id = validator.validatePlayableId(id);
+
+                    var foundIndex = this._playables.indexOf(id);
+                    if (foundIndex < 0) {
+                        throw new Error('not found in')
+                    }
+
+                    this._playables.splice(foundIndex, 1);
+                    return this;
+                }
+            })
+
+            Object.defineProperty(playlist, 'listPlaylables', {
+                value: function (page, size) {
+                    validator.validatePageandSize(page, size, this._playables.length);
+
+
+                    return this
+                        ._playables
+                        .slice()
+                        .sort(sortByTitleThenById)
+                        .splice(page * size, size)
+                }
+            })
+
+            return playlist;
+        }());
 
         playable = (function () {
             var currentPlayableId = 0;
@@ -171,7 +306,7 @@ function solve() {
                 // returns a new player instance with the provided name
             },
             getPlaylist: function (name) {
-                //returns a new playlist instance with the provided name
+                return Object.create(playlist).init(name);
             },
             getAudio: function (title, author, length) {
                 return Object.create(audio).init(title, author, length);
@@ -187,12 +322,18 @@ function solve() {
 
 var module = solve();
 
-for (var i = 1; i <= 10; i++) {
+var playlist = module.getPlaylist('My Playlist');
+
+for (var i = 1; i <= 15; i++) {
     var currentAudio = module.getAudio('Audio ' + i, 'Author ' + i, i);
+    playlist.addPlayable(currentAudio);
     console.log(currentAudio.play());
 }
 
-for (var i = 1; i <= 10; i++) {
-    var currentVideo = module.getVideo('Video ' + i, 'Video ' + i, 3.5);
+for (var i = 1; i <= 15; i++) {
+    var currentVideo = module.getVideo('Video ' + i, 'Video ' + i, 1);
+    playlist.addPlayable(currentVideo);
     console.log(currentVideo.play());
 }
+
+console.log(playlist);
