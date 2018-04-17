@@ -1,7 +1,8 @@
 function solve() {
     var module = (function () {
 
-        var playable,
+        var player,
+            playable,
             playlist,
             audio,
             video,
@@ -85,14 +86,30 @@ function solve() {
             }
         }
 
+        player = (function () {
+            var currentPlayerId = 0;
+            player = Object.create({});
+
+            Object.defineProperty(player, 'init', {
+                value: function (name) {
+                    this.name = name;
+                    this._id == ++currentPlayerId;
+                    this._playlists = [];
+                    return this;
+                }
+            })
+
+            return player;
+        }());
+
         playlist = (function () {
             var playlist = Object.create({});
             var currentPlayListId = 0;
 
             Object.defineProperty(playlist, 'init', {
                 value: function (name) {
-                    this.name = name;
-                    this._id == ++currentPlayListId;
+                    this._name = name;
+                    this._id = ++currentPlayListId;
                     this._playables = [];
                     return this;
                 }
@@ -118,6 +135,10 @@ function solve() {
             Object.defineProperty(playlist, 'id', {
                 get: function () {
                     return this._id;
+                },
+
+                set: function (val) {
+                    this._id = val;
                 }
             })
 
@@ -161,7 +182,9 @@ function solve() {
                 value: function (id) {
                     id = validator.validatePlayableId(id);
 
-                    var foundIndex = this._playables.indexOf(id);
+                    var foundIndex = this._playables.find((p) => {
+                        return p._id === id;
+                    })
                     if (foundIndex < 0) {
                         throw new Error('not found in')
                     }
@@ -303,7 +326,7 @@ function solve() {
 
         return {
             getPlayer: function (name) {
-                // returns a new player instance with the provided name
+                return Object.create(player).init(name);
             },
             getPlaylist: function (name) {
                 return Object.create(playlist).init(name);
@@ -324,16 +347,24 @@ var module = solve();
 
 var playlist = module.getPlaylist('My Playlist');
 
-for (var i = 1; i <= 15; i++) {
-    var currentAudio = module.getAudio('Audio ' + i, 'Author ' + i, i);
-    playlist.addPlayable(currentAudio);
-    console.log(currentAudio.play());
-}
+var audio1 = module.getAudio('First', 'First', 1);
+var audio2 = module.getAudio('Second', 'Second', 2);
+var audio3 = module.getAudio('Third', 'Third', 3);
 
-for (var i = 1; i <= 15; i++) {
-    var currentVideo = module.getVideo('Video ' + i, 'Video ' + i, 1);
-    playlist.addPlayable(currentVideo);
-    console.log(currentVideo.play());
-}
+playlist.addPlayable(audio3);
+playlist.addPlayable(audio2);
+playlist.addPlayable(audio1);
+
+// for (var i = 1; i <= 15; i++) {
+//     var currentAudio = module.getAudio('Audio ' + i, 'Author ' + i, i);
+//     playlist.addPlayable(currentAudio);
+//     console.log(currentAudio.play());
+// }
+
+// for (var i = 1; i <= 15; i++) {
+//     var currentVideo = module.getVideo('Video ' + i, 'Video ' + i, 1);
+//     playlist.addPlayable(currentVideo);
+//     console.log(currentVideo.play());
+// }
 
 console.log(playlist);
