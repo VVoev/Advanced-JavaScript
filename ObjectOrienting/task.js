@@ -99,6 +99,72 @@ function solve() {
                 }
             })
 
+            Object.defineProperty(player, 'id', {
+                get: function () {
+                    return this._id;
+                }
+            })
+
+            Object.defineProperty(player, 'name', {
+                get: function () {
+                    return this._name;
+                },
+
+                set: function (val) {
+                    validator.validateString(val, 'Player name');
+                    this._name = val;
+                }
+            })
+
+            Object.defineProperty(player, 'addPlaylist', {
+                value: function (playlist) {
+                    validator.validateIfUndefined(playlist, 'playlist is undefined');
+                    if (playlist.id === undefined) {
+                        throw new Error(`Player and playlist must have a id`);
+                    }
+
+                    this._playlists.push(playlist);
+                    return this;
+                }
+            })
+
+            Object.defineProperty(player, 'getPlaylistById', {
+                value: function (id) {
+                    var isFound = this._playlists.find((p) => {
+                        return p.id === id;
+                    })
+                    isFound = isFound || null;
+                    return isFound;
+                }
+            })
+
+            Object.defineProperty(player, 'removePlayListById', {
+                value: function (id) {
+                    if (typeof id === 'object') {
+                        var isFound = this._playlists.find((p) => {
+                            return p.id === id._id;
+                        })
+                        isFound = isFound || null;
+                        if (isFound) {
+                            var index = this._playlists.indexOf(isFound);
+                            this._playlists.splice(index, 1);
+                            return this._playlists;
+                        }
+                    }
+
+                    var isFound = this._playlists.find((p) => {
+                        return p.id === id;
+                    })
+                    isFound = isFound || null;
+                    if (isFound) {
+                        var index = this._playlists.indexOf(isFound);
+                        this._playlists.splice(index, 1);
+                        return this._playlists;
+                    }
+                    throw new Error('Such playlist does not exist');
+                }
+            })
+
             return player;
         }());
 
@@ -345,7 +411,11 @@ function solve() {
 
 var module = solve();
 
-var playlist = module.getPlaylist('My Playlist');
+var player = module.getPlayer('Vlado');
+
+var playlist = module.getPlaylist('My Playlist 1');
+var playlist2 = module.getPlaylist('My Playlist 2');
+var playlist3 = module.getPlaylist('My Playlist 3');
 
 var audio1 = module.getAudio('First', 'First', 1);
 var audio2 = module.getAudio('Second', 'Second', 2);
@@ -354,6 +424,8 @@ var audio3 = module.getAudio('Third', 'Third', 3);
 playlist.addPlayable(audio3);
 playlist.addPlayable(audio2);
 playlist.addPlayable(audio1);
+
+player.addPlaylist(playlist).addPlaylist(playlist2).addPlaylist(playlist3);
 
 // for (var i = 1; i <= 15; i++) {
 //     var currentAudio = module.getAudio('Audio ' + i, 'Author ' + i, i);
@@ -367,4 +439,4 @@ playlist.addPlayable(audio1);
 //     console.log(currentVideo.play());
 // }
 
-console.log(playlist);
+console.log(player);
