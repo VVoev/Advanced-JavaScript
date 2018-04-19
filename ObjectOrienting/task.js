@@ -138,6 +138,73 @@ function solve() {
                 }
             })
 
+            Object.defineProperty(player, 'listPlaylists', {
+                value: function (page, size) {
+                    validator.validatePageandSize(page, size, this._playlists.length);
+
+                    return this._playlists.slice()
+                        .sort(getSorting('name', 'id'))
+                        .splice(page * size, size);
+                }
+            })
+
+            Object.defineProperty(player, 'contains', {
+                value: function (playable, playlist) {
+                    var indexPlaylist = this._playlists.indexOf(playlist);
+                    if (indexPlaylist < 0) {
+                        return false;
+                    }
+                    var playlist = this._playlists[indexPlaylist];
+                    var playable = playlist.getPlayableById(playable.id);
+
+                    if (playable == null || playlist == null) {
+                        return false;
+                    }
+
+                    return true;
+                }
+            })
+
+            Object.defineProperty(player, 'search', {
+                value: function (pattern) {
+                    var result = [];
+                    this._playlists.forEach((pl) => {
+                        pl._playables.forEach((play) => {
+                            if (play.title.includes(pattern)) {
+                                var x = {
+                                    id: play.id,
+                                    name: play.title
+                                }
+                                result.push(x);
+                            }
+                        })
+                    })
+
+                    return result;
+                }
+            })
+
+            function getSorting(firstParam, secondParam) {
+                return function (first, second) {
+                    if (first[firstParam] < second[firstParam]) {
+                        return -1;
+                    }
+                    else if (first[firstParam] > second[firstParam]) {
+                        return 1;
+                    }
+
+                    if (first[secondParam] < second[secondParam]) {
+                        return -1;
+                    }
+                    else if (first[secondParam] > second[secondParam]) {
+                        return 1;
+                    }
+                    else {
+                        return 0;
+                    }
+                }
+            }
+
             Object.defineProperty(player, 'removePlayListById', {
                 value: function (id) {
                     if (typeof id === 'object') {
@@ -418,8 +485,9 @@ var playlist2 = module.getPlaylist('My Playlist 2');
 var playlist3 = module.getPlaylist('My Playlist 3');
 
 var audio1 = module.getAudio('First', 'First', 1);
-var audio2 = module.getAudio('Second', 'Second', 2);
+var audio2 = module.getAudio('SecondFirst', 'Second', 2);
 var audio3 = module.getAudio('Third', 'Third', 3);
+var audio4 = module.getAudio('Fourth', 'Fourth', 4);
 
 playlist.addPlayable(audio3);
 playlist.addPlayable(audio2);
@@ -440,3 +508,8 @@ player.addPlaylist(playlist).addPlaylist(playlist2).addPlaylist(playlist3);
 // }
 
 console.log(player);
+var isAudio1onPlayListOne = player.contains(audio1, playlist);
+var isAudio4onPlayListOne = player.contains(audio4, playlist);
+
+var patternSearchValid = player.search('First');
+var patternSearchInValid = player.search('Baxur');
